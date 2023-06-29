@@ -1,6 +1,6 @@
 from keras.models import Sequential, load_model
 from keras.callbacks import History, EarlyStopping, Callback
-from keras.layers.recurrent import LSTM
+from keras.layers import LSTM
 from keras.layers.core import Dense, Activation, Dropout
 import numpy as np
 import os
