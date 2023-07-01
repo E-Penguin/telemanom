@@ -1,7 +1,7 @@
 # Runtime params
 #===================================
-train: False # train new or existing model for each channel
-predict: False # generate new predicts or, if False, use predictions stored locally
+train: True # train new or existing model for each channel
+predict: True # generate new predicts or, if False, use predictions stored locally
 use_id: "2018-05-19_15.00.10"
 
 # number of values to evaluate in each batch
@@ -20,6 +20,10 @@ smoothing_perc: 0.05
 
 # number of values surrounding an error that are brought into the sequence (promotes grouping on nearby sequences
 error_buffer: 100
+
+# Selected architecture
+# ==================================
+arch: 'TSTPlus'
 
 # LSTM parameters
 # ==================================

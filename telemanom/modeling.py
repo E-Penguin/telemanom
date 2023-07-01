@@ -6,6 +6,8 @@ import numpy as np
 import os
 import logging
 
+from tsai.basics import *
+
 # suppress tensorflow CPU speedup warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 logger = logging.getLogger('telemanom')
@@ -36,6 +38,7 @@ class Model:
         self.run_id = run_id
         self.y_hat = np.array([])
         self.model = None
+        self.reg = None
 
         if not self.config.train:
             try:
@@ -50,8 +53,14 @@ class Model:
         else:
             self.train_new(channel)
             self.save()
-
+            
     def load(self):
+        if self.config.arch == 'classic':
+            self.load_classic()
+        else:
+            self.load_tsai()
+
+    def load_classic(self):
         """
         Load model for channel.
         """
@@ -59,8 +68,34 @@ class Model:
         logger.info('Loading pre-trained model')
         self.model = load_model(os.path.join('data', self.config.use_id,
                                              'models', self.chan_id + '.h5'))
-
+                                             
+    def load_tsai(self):
+        self.reg = load_learner("reg_{}_{}.pkl".format(self.chan_id, self.arch))
+                                             
     def train_new(self, channel):
+        if self.config.arch == 'classic':
+            self.train_new_classic(channel)
+        else:
+            self.train_new_tsai(channel)
+    
+    def train_new_tsai(self, channel):
+        print("training tsai")
+        
+        if self.config.arch == 'TSTPlus':
+            tfms = [None, TSRegression()]
+            batch_tfms = TSStandardize(by_sample=True)
+            self.reg = TSRegressor(channel.X_train, 
+                              channel.y_train, 
+                              path='models', 
+                              arch="TSTPlus", 
+                              tfms=tfms, 
+                              batch_tfms=batch_tfms, 
+                              metrics=rmse, 
+                              verbose=True)
+            self.reg.fit_one_cycle(100, 3e-4)
+            
+
+    def train_new_classic(self, channel):
         """
         Train LSTM model according to specifications in config.yaml.
 
@@ -103,12 +138,21 @@ class Model:
                        verbose=True)
 
     def save(self):
+        if self.config.arch == 'classic':
+            self.save_classic()
+        else:
+            self.save_tsai()
+            
+    def save_classic(self):
         """
         Save trained model.
         """
 
         self.model.save(os.path.join('data', self.run_id, 'models',
                                      '{}.h5'.format(self.chan_id)))
+                                     
+    def save_tsai(self):
+        self.reg.export("reg_{}_{}.pkl".format(self.chan_id, self.arch))
 
     def aggregate_predictions(self, y_hat_batch, method='first'):
         """
@@ -139,6 +183,20 @@ class Model:
 
         agg_y_hat_batch = agg_y_hat_batch.reshape(len(agg_y_hat_batch), 1)
         self.y_hat = np.append(self.y_hat, agg_y_hat_batch)
+        
+    def predict(self, X_test_batch):
+        if self.config.arch == 'classic':
+            return self.predict_classic(X_test_batch)
+        else:
+            return self.predict_tsai(X_test_batch)
+    
+    def predict_classic(self, X_test_batch):
+        return self.model.predict(X_test_batch)
+        
+    def predict_tsai(self, X_test_batch):
+        raw_preds, target, preds = self.reg.get_X_preds(X_test_batch)
+        
+        return preds
 
     def batch_predict(self, channel):
         """
@@ -168,7 +226,7 @@ class Model:
                 idx = channel.y_test.shape[0]
 
             X_test_batch = channel.X_test[prior_idx:idx]
-            y_hat_batch = self.model.predict(X_test_batch)
+            y_hat_batch = self.predict(X_test_batch)
             self.aggregate_predictions(y_hat_batch)
 
         self.y_hat = np.reshape(self.y_hat, (self.y_hat.size,))
