@@ -70,7 +70,7 @@ class Model:
                                              'models', self.chan_id + '.h5'))
                                              
     def load_tsai(self):
-        self.reg = load_learner("reg_{}_{}.pkl".format(self.chan_id, self.arch))
+        self.reg = load_learner("models/reg_{}_{}.pkl".format(self.chan_id, self.config.arch))
                                              
     def train_new(self, channel):
         if self.config.arch == 'classic':
@@ -81,18 +81,21 @@ class Model:
     def train_new_tsai(self, channel):
         print("training tsai")
         
-        if self.config.arch == 'TSTPlus':
+        if self.config.arch == 'TSTPlus' or\
+ 		   self.config.arch == "ResNetPlus":
             tfms = [None, TSRegression()]
             batch_tfms = TSStandardize(by_sample=True)
             self.reg = TSRegressor(channel.X_train, 
                               channel.y_train, 
                               path='models', 
-                              arch="TSTPlus", 
+                              arch=self.config.arch, 
                               tfms=tfms, 
                               batch_tfms=batch_tfms, 
                               metrics=rmse, 
                               verbose=True)
-            self.reg.fit_one_cycle(100, 3e-4)
+			
+			
+        self.reg.fit_one_cycle(100, 3e-4)
             
 
     def train_new_classic(self, channel):
@@ -152,7 +155,7 @@ class Model:
                                      '{}.h5'.format(self.chan_id)))
                                      
     def save_tsai(self):
-        self.reg.export("reg_{}_{}.pkl".format(self.chan_id, self.arch))
+        self.reg.export("reg_{}_{}.pkl".format(self.chan_id, self.config.arch))
 
     def aggregate_predictions(self, y_hat_batch, method='first'):
         """
