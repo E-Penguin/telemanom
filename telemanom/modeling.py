@@ -8,6 +8,9 @@ import logging
 
 from tsai.basics import *
 
+from fastai.callback.all import *
+
+
 # suppress tensorflow CPU speedup warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 logger = logging.getLogger('telemanom')
@@ -83,6 +86,8 @@ class Model:
         
         if self.config.arch == 'TSTPlus' or\
  		   self.config.arch == "ResNetPlus":
+            cbs=[EarlyStoppingCallback(monitor='train_loss', min_delta=self.config.min_delta, patience=self.config.patience),
+                 SaveModelCallback(monitor='train_loss', min_delta=self.config.min_delta)]
             tfms = [None, TSRegression()]
             batch_tfms = TSStandardize(by_sample=True)
             self.reg = TSRegressor(channel.X_train, 
@@ -94,8 +99,7 @@ class Model:
                               metrics=rmse, 
                               verbose=True)
 			
-			
-        self.reg.fit_one_cycle(self.config.epochs, 3e-4)
+        self.reg.fit_one_cycle(self.config.epochs, 3e-4, cbs=cbs)
             
 
     def train_new_classic(self, channel):
