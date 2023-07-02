@@ -95,7 +95,7 @@ class Model:
                               verbose=True)
 			
 			
-        self.reg.fit_one_cycle(100, 3e-4)
+        self.reg.fit_one_cycle(self.config.epochs, 3e-4)
             
 
     def train_new_classic(self, channel):
