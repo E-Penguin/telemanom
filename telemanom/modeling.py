@@ -85,7 +85,8 @@ class Model:
         print("training tsai")
         
         if self.config.arch == 'TSTPlus' or\
- 		   self.config.arch == "ResNetPlus":
+ 		   self.config.arch == 'ResNetPlus' or\
+           self.config.arch == 'LSTM_FCN':
             cbs=[EarlyStoppingCallback(monitor='train_loss', min_delta=self.config.min_delta, patience=self.config.patience),
                  SaveModelCallback(monitor='train_loss', min_delta=self.config.min_delta)]
             tfms = [None, TSRegression()]
