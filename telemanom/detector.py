@@ -10,6 +10,8 @@ import telemanom.helpers as helpers
 from telemanom.channel import Channel
 from telemanom.modeling import Model
 
+import gc
+
 logger = helpers.setup_logging()
 
 class Detector:
@@ -194,6 +196,8 @@ class Detector:
         Initiate processing for all channels.
         """
         for i, row in self.chan_df.iterrows():
+            gc.collect()
+
             logger.info('Stream # {}: {}'.format(i+1, row.chan_id))
             channel = Channel(self.config, row.chan_id)
             channel.load_data()
@@ -251,5 +255,10 @@ class Detector:
             self.result_df.to_csv(
                 os.path.join(self.result_path, '{}.csv'.format(self.id)),
                 index=False)
+
+            # Purge un-used data
+            channel = None
+            self.result_df = None
+
 
         self.log_final_stats()

@@ -8,7 +8,7 @@ use_id: "2018-05-19_15.00.10"
 batch_size: 70
 
 # number of trailing batches to use in error calculation
-window_size: 30
+window_size: 35
 
 # Columns headers for output file
 header: ["run_id", "chan_id", "spacecraft", "num_anoms", "anomaly_sequences", "class", "true_positives", 
@@ -23,7 +23,21 @@ error_buffer: 100
 
 # Selected architecture
 # ==================================
-arch: 'TSTPlus'
+#arch: 'TSTPlus'
+#arch: 'ResNetPlus'
+#arch: 'LSTM_FCN'
+arch: 'LSTM_FCNPlus'
+#arch: 'XceptionTimePlus'
+#arch: 'PatchTST' #doesn't work!
+#arch: 'TransformerLSTMPlus'
+#arch: 'LSTMPlus'
+
+arch_args: '{"rnn_layers":2, "bidirectional":true, "rnn_dropout":0.3}'
+#arch_args: '{"bidirectional":true, "num_rnn_layers":2, "num_encoder_layers":2, "proj_dropout":0.3}' #TransformerLSTMPlus
+#arch_args: '{"bidirectional":true, "hidden_size":[80,80], "rnn_dropout":0.3}' #LSTMPlus
+#arch_args: '{"shuffle":false, "bidirectional":true}'
+#arch_args: '{}'
+#arch_args: '{"decomposition":true}'
 
 # LSTM parameters
 # ==================================

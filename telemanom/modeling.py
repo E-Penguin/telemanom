@@ -10,6 +10,7 @@ from tsai.basics import *
 
 from fastai.callback.all import *
 
+import json
 
 # suppress tensorflow CPU speedup warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -86,21 +87,37 @@ class Model:
         
         if self.config.arch == 'TSTPlus' or\
  		   self.config.arch == 'ResNetPlus' or\
-           self.config.arch == 'LSTM_FCN':
-            cbs=[EarlyStoppingCallback(monitor='train_loss', min_delta=self.config.min_delta, patience=self.config.patience),
-                 SaveModelCallback(monitor='train_loss', min_delta=self.config.min_delta)]
+           self.config.arch == 'LSTM_FCN' or \
+           self.config.arch == 'LSTM_FCNPlus' or \
+           self.config.arch == 'XceptionTimePlus' or \
+           self.config.arch == 'TransformerLSTMPlus' or\
+           self.config.arch == 'LSTMPlus':
+
+            cbs=[EarlyStoppingCallback(monitor='valid_loss', min_delta=self.config.min_delta, patience=self.config.patience),
+                 SaveModelCallback(monitor='valid_loss', min_delta=self.config.min_delta)]
             tfms = [None, TSRegression()]
             batch_tfms = TSStandardize(by_sample=True)
-            self.reg = TSRegressor(channel.X_train, 
+
+            arch_config = json.loads(self.config.arch_args)
+
+            loss_func = nn.MSELoss()
+
+            splits = TimeSplitter(valid_size=self.config.validation_split, show_plot=False)(channel.y_train)
+
+            self.reg = TSForecaster(channel.X_train, 
                               channel.y_train, 
                               path='models', 
-                              arch=self.config.arch, 
+                              arch=self.config.arch,
+                              arch_config=arch_config,
                               tfms=tfms, 
                               batch_tfms=batch_tfms, 
-                              metrics=rmse, 
+                              batch_size=self.config.lstm_batch_size,
+                              metrics=rmse,
+                              #loss_func=loss_func,
+                              splits=splits,
                               verbose=True)
 			
-        self.reg.fit_one_cycle(self.config.epochs, 3e-4, cbs=cbs)
+            self.reg.fit_one_cycle(self.config.epochs, 3e-4, cbs=cbs)
             
 
     def train_new_classic(self, channel):
