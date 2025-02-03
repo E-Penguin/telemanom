@@ -60,6 +60,9 @@ class Detector:
             self.id = self.config.use_id
         else:
             self.id = dt.now().strftime('%Y-%m-%d_%H.%M.%S')
+            
+        # Add the architecture name to the id
+        self.id = f"{self.id}_{self.config.arch}"
 
         helpers.make_dirs(self.id)
 
@@ -79,6 +82,39 @@ class Detector:
 
         logger.info("{} channels found for processing."
                     .format(len(self.chan_df)))
+                    
+    def f1_score_individual_points(self, tp_sequences, fp_sequences, anomaly_sequences):
+        # Convert sequences to sets of individual points
+        def sequences_to_points(sequences):
+            points = set()
+            for start, end in sequences:
+                for i in range(start, end + 1):
+                    points.add(i)
+            return points
+
+        tp_points = sequences_to_points(tp_sequences)
+        fp_points = sequences_to_points(fp_sequences)
+        anomaly_points = sequences_to_points(anomaly_sequences)
+
+        # Calculate true positives
+        TP = len(tp_points.intersection(anomaly_points))
+        
+        # Calculate false positives
+        # False positives in tp_sequences which aren't in anomaly_sequences
+        FP_from_tp = len(tp_points - anomaly_points)
+        # False positives in fp_sequences which aren't in anomaly_sequences
+        FP_from_fp = len(fp_points - anomaly_points)
+        FP = FP_from_tp + FP_from_fp
+
+        # Calculate false negatives
+        FN = len(anomaly_points) - TP
+
+        # Calculate precision, recall, and F1
+        precision = TP / (TP + FP) if TP + FP != 0 else 0
+        recall = TP / len(anomaly_points) if anomaly_points else 0
+        f1 = 2 * precision * recall / (precision + recall) if precision + recall != 0 else 0
+
+        return f1, TP, FP, FN  # Return intermediate values for clarity
 
     def evaluate_sequences(self, errors, label_row):
         """
@@ -99,8 +135,13 @@ class Detector:
             'false_negatives': 0,
             'true_positives': 0,
             'fp_sequences': [],
+            'fn_sequences': [],
             'tp_sequences': [],
-            'num_true_anoms': 0
+            'num_true_anoms': 0,
+            'f1_per_time_point' : 0,
+            'tp_per_time_point' : 0,
+            'fp_per_time_point' : 0,
+            'fn_per_time_point' : 0
         }
 
         matched_true_seqs = []
@@ -111,6 +152,7 @@ class Detector:
 
         if len(errors.E_seq) == 0:
             result_row['false_negatives'] = result_row['num_true_anoms']
+            result_row['fn_sequences'] = label_row['anomaly_sequences']
 
         else:
             true_indices_grouped = [list(range(e[0], e[1]+1)) for e in label_row['anomaly_sequences']]
@@ -137,12 +179,28 @@ class Detector:
                     result_row['fp_sequences'].append([e_seq[0], e_seq[1]])
                     result_row['false_positives'] += 1
 
+            # Create a list of false negative sequences [start, end] indexes
+            fn_sequences = [e_seq for i, e_seq in enumerate(label_row['anomaly_sequences']) if i not in matched_true_seqs]
+
+            # Store the false negative sequences in the result_row
+            result_row['fn_sequences'] = fn_sequences
+            
             result_row["false_negatives"] = len(np.delete(label_row['anomaly_sequences'],
                                                           matched_true_seqs, axis=0))
 
         logger.info('Channel Stats: TP: {}  FP: {}  FN: {}'.format(result_row['true_positives'],
                                                                    result_row['false_positives'],
                                                                    result_row['false_negatives']))
+                                                                   
+        
+        f1, TP, FP, FN = self.f1_score_individual_points(result_row['tp_sequences'],
+                                                          result_row['fp_sequences'],
+                                                          label_row['anomaly_sequences'])
+        result_row['f1_per_time_point'] = f1
+        result_row['tp_per_time_point'] = TP
+        result_row['fp_per_time_point'] = FP
+        result_row['fn_per_time_point'] = FN
+        
 
         for key, value in result_row.items():
             if key in self.result_tracker:
