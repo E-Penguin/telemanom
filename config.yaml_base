@@ -1,5 +1,3 @@
-arch: 'GRUAttentionPlus'
-arch_args: '{"bidirectional":true, "rnn_layers":2}' #GRUAttentionPlus
 # Runtime params
 #===================================
 train: True # train new or existing model for each channel

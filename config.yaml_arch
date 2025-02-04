@@ -1,0 +1,55 @@
+# Selected architecture
+# ==================================
+# Wavelet
+#xarch: 'mWDNPlus'
+#xarch_args: '{"levels": 4}'
+  
+#MLP
+#xarch: 'MLP'
+#xarch_args: '{}'
+
+#xarch: 'gMLP'
+#xarch_args: '{}'
+
+# Transformers
+#xarch: 'TSTPlus'
+#xarch_args: '{}'
+
+#xarch: 'TransformerLSTMPlus'
+#xarch_args: '{"bidirectional":true, "num_rnn_layers":2, "num_encoder_layers":2, "proj_dropout":0.3}' #TransformerLSTMPlus
+
+#xarch: 'LSTMAttentionPlus'
+#xarch_args: '{"bidirectional":true, "rnn_layers":2}' #LSTMAttentionPlus
+
+#arch:'GRUAttentionPlus'
+#arch_args: '{"bidirectional":true, "rnn_layers":2}' #GRUAttentionPlus
+
+#CNN
+#xarch: 'FCNPlus'
+#xarch_args: '{}'
+
+#xarch: 'ResNetPlus'
+#xarch_args: '{}'
+
+#xarch: 'XceptionTimePlus'
+#xarch_args: '{}'
+
+#xarch: 'InceptionTimeXLPlus'
+#xarch_args: '{}'
+
+#xarch: 'MultiInceptionTimePlus'
+#xarch_args: '{}'
+
+#xarch: 'OmniScaleCNN'
+#xarch_args: '{}'
+
+#RNN
+#xarch: 'LSTMPlus'
+#xarch_args: '{"bidirectional":true, "hidden_size":[80,80], "rnn_dropout":0.3}' #LSTMPlus
+
+#xarch: 'LSTM_FCNPlus'
+#xarch_args: '{"rnn_layers":2, "bidirectional":true, "rnn_dropout":0.3, "shuffle":false, "se":16}' # LSTM_FCNPlus
+
+#xarch: 'GRUPlus'
+#xarch_args: '{"bidirectional":true, "hidden_size":[80,80], "rnn_dropout":0.3}' #GRUPluslus
+
